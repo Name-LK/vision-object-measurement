@@ -1,8 +1,7 @@
 import time
 import numpy as np
 import freenect
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (necessário para proj 3D)
+import pyvista as pv  # Substitui Matplotlib
 
 # ==== Parâmetros intrínsecos do Kinect v1 (aprox) ====
 FX = 594.21
@@ -11,12 +10,12 @@ CX = 339.5
 CY = 242.7
 
 # ==== Ajustes de visualização/performance ====
-STEP = 4           # downsample por passo de pixels (4 => ~160x120 pontos)
-Z_MIN = 500.0      # mm (corta muito perto)
-Z_MAX = 4000.0     # mm (corta muito longe)
+STEP = 4          # downsample por passo de pixels (4 => ~160x120 pontos)
+Z_MIN = 500.0     # mm (corta muito perto)
+Z_MAX = 4000.0    # mm (corta muito longe)
 MAX_POINTS = 40000 # limite de pontos no scatter (por segurança)
-FPS_LIMIT = 10     # taxa-alvo de atualização (frames por segundo)
 
+# As funções de captura e conversão de dados permanecem as mesmas
 def get_depth_mm():
     """Captura um frame de profundidade em milímetros (float32)."""
     depth, _ = freenect.sync_get_depth(format=freenect.DEPTH_MM)
@@ -26,114 +25,88 @@ def get_depth_mm():
 
 def depth_to_points_xyz(depth_mm, step=4, zmin=500.0, zmax=4000.0):
     """Converte mapa de profundidade para pontos 3D (XYZ) com downsample."""
-    # Amostragem por passo para acelerar
     d = depth_mm[::step, ::step]
-
     h, w = d.shape
     i, j = np.meshgrid(np.arange(w, dtype=np.float32),
                        np.arange(h, dtype=np.float32),
                        indexing='xy')
-
     z = d
     x = (i*step - CX) * z / FX
     y = (j*step - CY) * z / FY
-
-    # Máscara: remove zeros/NaN e corta por faixa
     mask = (z > 0) & np.isfinite(z) & (z >= zmin) & (z <= zmax)
-
-    x = x[mask]
-    y = y[mask]
-    z = z[mask]
-
+    x, y, z = x[mask], y[mask], z[mask]
     pts = np.stack((x, y, z), axis=-1)
-
-    # Se ainda tem muitos pontos, amostra aleatoriamente
     if pts.shape[0] > MAX_POINTS:
         idx = np.random.choice(pts.shape[0], size=MAX_POINTS, replace=False)
         pts = pts[idx]
-
     return pts
 
-def set_axes_equal(ax):
-    """Deixa os eixos com mesma escala (importante p/ 3D ficar proporcional)."""
-    x_limits = ax.get_xlim3d()
-    y_limits = ax.get_ylim3d()
-    z_limits = ax.get_zlim3d()
-
-    x_range = abs(x_limits[1] - x_limits[0])
-    y_range = abs(y_limits[1] - y_limits[0])
-    z_range = abs(z_limits[1] - z_limits[0])
-
-    max_range = max([x_range, y_range, z_range])
-    x_middle = np.mean(x_limits)
-    y_middle = np.mean(y_limits)
-    z_middle = np.mean(z_limits)
-
-    ax.set_xlim3d([x_middle - max_range/2, x_middle + max_range/2])
-    ax.set_ylim3d([y_middle - max_range/2, y_middle + max_range/2])
-    ax.set_zlim3d([z_middle - max_range/2, z_middle + max_range/2])
+# A função set_axes_equal não é mais necessária, PyVista cuida disso.
 
 def main():
-    print("Iniciando visualização ao vivo... Pressione Ctrl+C para encerrar.")
-    # Primeiro frame para dimensionar
-    depth0 = get_depth_mm()
-    pts0 = depth_to_points_xyz(depth0, step=STEP, zmin=Z_MIN, zmax=Z_MAX)
-    if pts0.size == 0:
-        raise RuntimeError("Nenhum ponto válido no primeiro frame. Ajuste Z_MIN/Z_MAX.")
+    print("Iniciando visualização ao vivo com PyVista... Pressione 'q' na janela para encerrar.")
 
-    # Figura e eixos 3D
-    plt.ion()
-    fig = plt.figure("Kinect 3D Live")
-    ax = fig.add_subplot(111, projection='3d')
+    # --- Configuração inicial do PyVista ---
+    plotter = pv.Plotter(window_size=[1024, 768])
 
-    sc = ax.scatter(pts0[:, 0], pts0[:, 1], pts0[:, 2], s=1, depthshade=False)
-    ax.set_xlabel("X (mm)")
-    ax.set_ylabel("Y (mm)")
-    ax.set_zlabel("Z (mm)")
-    ax.set_title("Kinect - Nuvem de Pontos (ao vivo)")
-
-    # Limites iniciais razoáveis a partir do primeiro frame
-    margin = 200.0
-    ax.set_xlim(pts0[:, 0].min()-margin, pts0[:, 0].max()+margin)
-    ax.set_ylim(pts0[:, 1].min()-margin, pts0[:, 1].max()+margin)
-    ax.set_zlim(pts0[:, 2].min()-margin, pts0[:, 2].max()+margin)
-    set_axes_equal(ax)
-
-    last = time.time()
-    target_dt = 1.0 / max(1, FPS_LIMIT)
-
+    # Captura o primeiro frame para inicializar a nuvem de pontos
     try:
-        while True:
-            # Controle simples de FPS
-            now = time.time()
-            if now - last < target_dt:
-                time.sleep(target_dt - (now - last))
-            last = time.time()
+        depth0 = get_depth_mm()
+        pts0 = depth_to_points_xyz(depth0, step=STEP, zmin=Z_MIN, zmax=Z_MAX)
+        if pts0.size == 0:
+            raise RuntimeError("Nenhum ponto válido no primeiro frame. Ajuste Z_MIN/Z_MAX.")
+    except RuntimeError as e:
+        print(f"Erro: {e}")
+        return
 
+    # Cria o objeto de malha (nuvem de pontos) do PyVista
+    # Usamos pv.PolyData para representar a nuvem de pontos
+    point_cloud = pv.PolyData(pts0)
+    
+    # Adiciona a malha ao plotter. 'render_points_as_spheres=False' é mais rápido
+    # O nome 'kinect_cloud' é um identificador que podemos usar depois se precisarmos
+    plotter.add_mesh(point_cloud,
+                     style='points',
+                     color='cyan',
+                     point_size=2,
+                     render_points_as_spheres=False,
+                     name='kinect_cloud')
+
+    # Configura a cena
+    plotter.add_axes()
+    plotter.show_grid(color='#222222')
+    plotter.set_background('black')
+    
+    # Inicia a visualização em modo interativo e não-bloqueante
+    plotter.show(interactive_update=True, auto_close=False)
+
+    print("Visualizador iniciado. Loop principal rodando...")
+    try:
+        while plotter.close:
+            # Captura novos dados de profundidade
             depth = get_depth_mm()
             pts = depth_to_points_xyz(depth, step=STEP, zmin=Z_MIN, zmax=Z_MAX)
+
             if pts.size == 0:
-                continue
+                # Se não houver pontos, podemos limpar a malha ou pular o frame
+                point_cloud.points = np.zeros((0, 3)) # Limpa os pontos
+            else:
+                # --- A MÁGICA ACONTECE AQUI ---
+                # Atualiza as coordenadas dos pontos na malha existente
+                point_cloud.points = pts
+                # Força uma atualização dos limites da câmera para se ajustar aos novos pontos
+                plotter.camera.reset_clipping_range()
 
-            # Atualiza dados do scatter (truque para 3D)
-            sc._offsets3d = (pts[:, 0], pts[:, 1], pts[:, 2])
-
-            # Atualiza limites de forma suave (opcional)
-            # Comentado por estabilidade; descomente se quiser autoscale:
-            # ax.set_xlim(pts[:, 0].min()-margin, pts[:, 0].max()+margin)
-            # ax.set_ylim(pts[:, 1].min()-margin, pts[:, 1].max()+margin)
-            # ax.set_zlim(pts[:, 2].min()-margin, pts[:, 2].max()+margin)
-            # set_axes_equal(ax)
-
-            plt.draw()
-            plt.pause(0.001)
+            # Renderiza a cena atualizada e processa eventos da janela (ex: fechar, mover)
+            plotter.update()
 
     except KeyboardInterrupt:
-        print("\nEncerrado pelo usuário.")
+        print("\nEncerrado pelo usuário (Ctrl+C).")
     finally:
-        plt.ioff()
-        plt.show()
+        # Garante que a janela seja fechada ao sair
+        plotter.close()
+        print("Visualizador fechado.")
+
 
 if __name__ == "__main__":
     main()
-
