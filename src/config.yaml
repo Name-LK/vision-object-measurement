@@ -1,0 +1,15 @@
+sensor:
+  type: "kinect_v1"
+
+roi_bounds:
+  min_x: -250
+  max_x: 250
+  min_y: -200
+  max_y: 200
+  min_z: 850
+  max_z: 2000
+
+processing:
+  plane_distance_threshold: 3.0
+  outlier_nb_neighbors: 20
+  outlier_std_ratio: 2.0
