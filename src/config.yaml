@@ -1,5 +1,8 @@
 sensor:
   type: "kinect_v1"
+  step_downsample: 4
+  z_min_cutoff: 500
+  z_max_cutoff: 4000
 
 roi_bounds:
   min_x: -250
