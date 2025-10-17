@@ -1,4 +1,4 @@
-#!/home/lk/code/vision-object-measurement/bin/python
+#!/home/lk/code/vision-object-measurement/bin/python3.11
 # -*- coding: utf-8 -*-
 import re
 import sys

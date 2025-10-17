@@ -5,7 +5,7 @@ from echo_vision.utils.config_loader import load_config
 from echo_vision.capture.factory import SensorFactory
 from echo_vision.processing.segmentation import isolate_object
 from echo_vision.processing.measurement import calculate_measurements
-from echo_vision.views.plotter import display_results
+from echo_vision.views.plotter import display_results, display_live_results
 
 def run_measurement_pipeline():
     """Orchestrates the main flow of the measurement application."""
@@ -17,7 +17,7 @@ def run_measurement_pipeline():
     try:
         # 2. Capture Layer
         print(f"Using sensor: {config['sensor']['type']}")
-        capturer = SensorFactory.create_capturer(config['sensor']['type'])
+        capturer = SensorFactory.create_capturer(sensor_type=config['sensor']['type'], config=config)
         original_pcd = capturer.get_point_cloud()
 
         # 3. Processing Layer
@@ -43,5 +43,21 @@ def run_measurement_pipeline():
     except (ValueError, RuntimeError, NotImplementedError) as e:
         print(f"A critical error occurred: {e}")
 
+def run_live_cloud_pipeline():
+    print("Startint Echo Vision (Live Mode)...")
+
+    try:
+        config = load_config('config.yaml')
+        sensor_type = config.get('sensor', {}).get('type', 'kinect_v1')
+        print(f"Using sensor: {sensor_type}")
+
+        capturer = SensorFactory.create_capturer(sensor_type, config)
+
+        display_live_results(capturer)
+        
+        run_measurement_pipeline()
+    except (ValueError, RuntimeError, FileNotFoundError) as e:
+         print(f"Critical Error: {e}")
+         
 if __name__ == "__main__":
-    run_measurement_pipeline()
+	run_live_cloud_pipeline()

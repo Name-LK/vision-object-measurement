@@ -1,6 +1,0 @@
-numpy
-freenect
-open3d-python
-pyvista
-scipy
-PyYAML
