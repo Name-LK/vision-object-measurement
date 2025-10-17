@@ -4,3 +4,4 @@ open3d
 pyvista
 scipy
 PyYAML
+customtkinter
