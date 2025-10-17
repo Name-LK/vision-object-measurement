@@ -17,7 +17,7 @@ def run_measurement_pipeline():
     try:
         # 2. Capture Layer
         print(f"Using sensor: {config['sensor']['type']}")
-        capturer = SensorFactory.create_capturer(config['sensor']['type'])
+        capturer = SensorFactory.create_capturer(sensor_type=config['sensor']['type'], config=config)
         original_pcd = capturer.get_point_cloud()
 
         # 3. Processing Layer

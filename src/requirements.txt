@@ -1,6 +1,6 @@
 numpy
 freenect
-open3d-python
+open3d
 pyvista
 scipy
 PyYAML
