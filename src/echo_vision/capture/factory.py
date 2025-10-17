@@ -1,5 +1,5 @@
 # Contains 'SensorFactory' Class
-from echo_vision.capture.capturer_interface import Capturer
+from echo_vision.interfaces.capturer_interface import Capturer
 from echo_vision.drivers.kinectV1_driver import KinectV1Capturer
 #from hololens_2 import HololensV2Capturer
 

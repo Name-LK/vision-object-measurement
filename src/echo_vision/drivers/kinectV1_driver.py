@@ -2,7 +2,7 @@
 import freenect
 import numpy as np
 import open3d as o3d
-from echo_vision.capture.capturer_interface import Capturer
+from echo_vision.interfaces.capturer_interface import Capturer
 
 class KinectV1Capturer(Capturer):
     """Capture implementation for kinect V1"""
