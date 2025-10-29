@@ -5,11 +5,12 @@ customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 
 class App(customtkinter.CTk):
-    def __init__(self, widget_factory, button_action):
+    def __init__(self, widget_factory, button_action, button_action_2):
         super().__init__()
 
         self.widget_factory = widget_factory
         self.button_action = button_action
+        self.button_action_2 = button_action_2
 
         self.title("Title example")
         self.geometry("400x300")
@@ -27,15 +28,16 @@ class App(customtkinter.CTk):
         main_button = self.widget_factory.create_widget(
             "button",
             master=self,
-            text="Lice Capture",
+            text="Live Capture",
             command=self.button_action
         )
         main_button.pack(pady=10, padx=20)
 
         my_entry = self.widget_factory.create_widget(
-            "entry",
+            "button",
             master=self,
-            placeholder_text="PlaceHolder Text"
+            text="Live Mesurement",
+            command=self.button_action_2
         )
         my_entry.pack(pady=10, padx=20)
     
