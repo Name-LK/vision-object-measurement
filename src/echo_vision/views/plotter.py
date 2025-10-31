@@ -97,3 +97,46 @@ def display_live_results(capturer):
         # Garante que a janela seja fechada ao sair
         plotter.close()
         print("Visualizador fechado.")
+
+def display_live_rgb_capture(capturer):
+    print("Setting up PyVista Pllotter...")
+    plotter = pv.Plotter()
+
+    #Catch a initial frame
+    try:
+        rgb_frame = capturer.get_rgb_video()
+    except TypeError:
+        print("\n[ERROR] Can't get a kinect RGB frame")
+        exit()
+    
+    height, width, _ = rgb_frame.shape 
+
+    #Create the texture using initial frame
+    tex = pv.Texture(rgb_frame)
+
+    #Create a 2D plan
+    plane = pv.Plane(center=(width/2, height/2, 0),
+                     i_size=width,
+                     j_size=height)
+    
+    actor = plotter.add_mesh(plane, texture=tex)
+
+    #Config the camera
+    plotter.view_xy()
+    plotter.enable_parallel_projection()
+
+    print("Starting 2D loop...")
+
+    plotter.show(interactive_update=True, auto_close=False)
+
+    #Main loop to get the next frame
+    while not plotter._closed:
+        new_rgb_frame = capturer.get_rgb_video()
+        actor.texture = pv.Texture(new_rgb_frame)
+
+        #Update the plotter
+        plotter.update()
+    
+    #Cleaning
+    print("Closing plotter")
+    plotter.close()

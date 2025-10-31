@@ -2,7 +2,6 @@ from echo_vision.utils.config_loader import load_config
 from echo_vision.capture.factory import SensorFactory
 from echo_vision.views.plotter import display_live_results
 from echo_vision.utils.config_loader import load_config
-from echo_vision.capture.factory import SensorFactory
 from echo_vision.processing.segmentation import isolate_object
 from echo_vision.processing.measurement import calculate_measurements
 from echo_vision.views.plotter import display_results, display_live_results
