@@ -43,7 +43,7 @@ class KinectV1Capturer(Capturer):
         pcd.points = o3d.utility.Vector3dVector(pts)
         return pcd
     
-    def get_rgb_video(self):
+    def get_rgb_frame(self):
         """Returns the RGB video frame"""
         array, _ = freenect.sync_get_video()
         return array

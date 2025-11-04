@@ -16,3 +16,8 @@ processing:
   plane_distance_threshold: 3.0
   outlier_nb_neighbors: 20
   outlier_std_ratio: 2.0
+
+color_detection:
+  lower_hsv: [100, 150, 50]
+  upper_hsv: [130, 255, 255]
+  min_area: 500

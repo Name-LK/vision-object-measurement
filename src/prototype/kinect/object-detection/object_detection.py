@@ -1,7 +1,7 @@
 #run the RGB live pipeline and detect objects by color
 
 from echo_vision.logic.rgb_capture import rgb_live_pipeline
-from echo_vision.processing.frame.rgb_frame import get_frame
+#from echo_vision.processing.frame.rgb_frame import get_frame
 from echo_vision.capture.factory import SensorFactory
 from echo_vision.utils.config_loader import load_config
 
@@ -19,7 +19,8 @@ print("Iniciando loop de processamento... Pressione 'q' para sair.")
 
 while True:
     # 1. Ler o frame (agora da sua função do Kinect)
-    frame = get_frame(capturer)
+    
+    frame = capturer.get_rgb_frame()
 
     # Verificar se o frame foi capturado com sucesso
     if frame is None:
@@ -28,6 +29,9 @@ while True:
 
     # O RESTO DO SCRIPT É EXATAMENTE O MESMO
     
+    # Converte de RGB para BGR
+    #frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
     # 2. Converter de BGR para HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
